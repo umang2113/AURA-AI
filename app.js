@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         recognitionLang: localStorage.getItem('AURA_RECOGNITION_LANG') || 'hi-IN',
         elevenLabsKey: localStorage.getItem('AURA_ELEVENLABS_KEY') || '',
         auraVoiceId: localStorage.getItem('AURA_VOICE_ID') || 'EXAVITQu4vr4xnSDxMaL', // Bella (pre-made)
-        ishqaVoiceId: localStorage.getItem('AURA_ISHQA_VOICE_ID') || '21m00Tcm4TlvDq8ikWAM', // Rachel (pre-made)
+        ishqaVoiceId: 'XcWoPxj7pwnIgM3dQnWv', // Fixed for ISHQA mode (Cannot be changed)
         pendingAction: null // Holds intercept details during permission checks
     };
 
@@ -933,7 +933,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Save ElevenLabs state variables
         appState.elevenLabsKey = elevenlabsApiKeyInput.value.trim();
         appState.auraVoiceId = auraVoiceIdInput.value.trim() || 'EXAVITQu4vr4xnSDxMaL';
-        appState.ishqaVoiceId = ishqaVoiceIdInput.value.trim() || '21m00Tcm4TlvDq8ikWAM';
+        appState.ishqaVoiceId = 'XcWoPxj7pwnIgM3dQnWv'; // Locked value
 
         // Store to localStorage
         localStorage.setItem('AURA_GEMINI_KEY', appState.geminiKey);
