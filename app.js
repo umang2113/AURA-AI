@@ -47,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendInputBtn = document.getElementById('send-input-btn');
     const transcriptBody = document.getElementById('transcript-body');
     const clearChatBtn = document.getElementById('clear-chat-btn');
-    const weatherBody = document.getElementById('weather-body');
     const notesList = document.getElementById('notes-list');
     const addNoteBtn = document.getElementById('add-note-btn');
     const noteInputContainer = document.getElementById('note-input-container');
@@ -288,103 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial load
     renderNotes();
 
-    // --------------------------------------------------
-    // WIDGET LOGIC - REAL WEATHER (OPEN-METEO)
-    // --------------------------------------------------
-    function loadWeather() {
-        weatherBody.innerHTML = `
-            <div class="weather-loading">
-                <i class="fa-solid fa-circle-notch fa-spin"></i>
-                <span>Retrieving weather...</span>
-            </div>
-        `;
 
-        if (!navigator.geolocation) {
-            renderOfflineWeather("Geolocation not supported.");
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                try {
-                    // Fetch weather data from Open-Meteo (API key not needed!)
-                    const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-                    const weatherData = await weatherResponse.json();
-                    
-                    // Weather codes mapped to simple icons
-                    const code = weatherData.current_weather.weathercode;
-                    const temp = Math.round(weatherData.current_weather.temperature);
-                    const wind = weatherData.current_weather.windspeed;
-                    
-                    let iconClass = 'fa-solid fa-sun';
-                    let description = 'Clear Sky';
-                    
-                    if (code >= 1 && code <= 3) {
-                        iconClass = 'fa-solid fa-cloud-sun';
-                        description = 'Partly Cloudy';
-                    } else if (code >= 45 && code <= 48) {
-                        iconClass = 'fa-solid fa-smog';
-                        description = 'Foggy';
-                    } else if (code >= 51 && code <= 67) {
-                        iconClass = 'fa-solid fa-cloud-rain';
-                        description = 'Raining';
-                    } else if (code >= 71 && code <= 77) {
-                        iconClass = 'fa-solid fa-snowflake';
-                        description = 'Snowing';
-                    } else if (code >= 80 && code <= 82) {
-                        iconClass = 'fa-solid fa-cloud-showers-heavy';
-                        description = 'Showers';
-                    } else if (code >= 95) {
-                        iconClass = 'fa-solid fa-cloud-bolt';
-                        description = 'Thunderstorms';
-                    }
-
-                    // Display weather
-                    weatherBody.innerHTML = `
-                        <div class="weather-info-card">
-                            <div class="weather-temp-section">
-                                <i class="${iconClass} weather-icon-glow"></i>
-                                <span class="weather-temp">${temp}°C</span>
-                            </div>
-                            <div class="weather-detail-section">
-                                <span class="weather-city">Current Location</span>
-                                <span class="weather-desc">${description}</span>
-                                <span class="weather-desc"><i class="fa-solid fa-wind"></i> ${wind} km/h</span>
-                            </div>
-                        </div>
-                    `;
-                } catch (err) {
-                    console.error(err);
-                    renderOfflineWeather("Network error.");
-                }
-            },
-            (error) => {
-                console.warn("Geolocation block: ", error);
-                renderOfflineWeather("Location Access Denied");
-            }
-        );
-    }
-
-    function renderOfflineWeather(message) {
-        weatherBody.innerHTML = `
-            <div class="weather-info-card">
-                <div class="weather-temp-section">
-                    <i class="fa-solid fa-cloud-sun-rain weather-icon-glow"></i>
-                    <span class="weather-temp">28°C</span>
-                </div>
-                <div class="weather-detail-section">
-                    <span class="weather-city">Weather Mode</span>
-                    <span class="weather-desc">Pleasant (Simulated)</span>
-                    <span class="weather-desc" style="font-size:10px; color:var(--text-muted);">${message}</span>
-                </div>
-            </div>
-        `;
-    }
-
-    // Initial weather load
-    loadWeather();
 
     // --------------------------------------------------
     // TRANSCRIPT & DISPLAY HISTORY
@@ -584,28 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function parseSystemCommands(input) {
         const text = input.toLowerCase().trim();
         
-        // 1. Weather check command
-        if (text.includes("weather") || text.includes("mausam") || text.includes("taapmaan")) {
-            const runWeather = () => {
-                loadWeather();
-                const reply = appState.mode === 'aura' 
-                    ? "Retrieving the live weather information for your location right now." 
-                    : "Mausam toh bilkul badal sa gaya hai jabse aap aaye ho! Main live weather check kar rahi hoon aapke liye.";
-                appendTranscript("Assistant", reply);
-                speakVoice(reply);
-            };
 
-            if (appState.mode === 'ishqa') {
-                requestActionPermission("Weather API Access", "Detecting geographic coordinates to fetch real-time forecasts", runWeather, () => {
-                    const reply = "Theek hai, aapki ijaazat nahi toh weather nahi check karungi, bas aapka khayal rakhungi.";
-                    appendTranscript("Assistant", reply);
-                    speakVoice(reply);
-                });
-            } else {
-                runWeather();
-            }
-            return true;
-        }
 
         // 2. YouTube / Google Search Command
         const searchMatches = text.match(/(?:youtube|google)\s+(?:par|on)?\s*(?:search|dhundo|dhoondo|open)?\s*(.*)/i) || 

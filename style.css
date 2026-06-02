@@ -639,7 +639,7 @@ body.theme-ishqa .send-btn {
 /* Dashboard sub-grid */
 .sub-widgets-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 20px;
     flex-grow: 1;
     min-height: 160px;
@@ -648,67 +648,6 @@ body.theme-ishqa .send-btn {
 
 .sub-widgets-grid .widget {
     height: 100%;
-}
-
-/* Weather Widget Details */
-.weather-body {
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-}
-
-.weather-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
-.weather-info-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    animation: msgFadeIn 0.3s ease-out;
-}
-
-.weather-temp-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.weather-icon-glow {
-    font-size: 28px;
-    color: var(--accent-color);
-    text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
-    margin-bottom: 4px;
-}
-
-.weather-temp {
-    font-size: 24px;
-    font-weight: 700;
-}
-
-.weather-detail-section {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.weather-city {
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.weather-desc {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: capitalize;
 }
 
 /* Notes Widget Details */
