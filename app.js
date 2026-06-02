@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
             rate: parseFloat(localStorage.getItem('AURA_VOICE_RATE')) || 1.0
         },
         recognitionLang: localStorage.getItem('AURA_RECOGNITION_LANG') || 'hi-IN',
+        elevenLabsKey: localStorage.getItem('AURA_ELEVENLABS_KEY') || '',
+        auraVoiceId: localStorage.getItem('AURA_VOICE_ID') || 'EXAVITQu4vr4xnSDxMaL', // Bella (pre-made)
+        ishqaVoiceId: localStorage.getItem('AURA_ISHQA_VOICE_ID') || '21m00Tcm4TlvDq8ikWAM', // Rachel (pre-made)
         pendingAction: null // Holds intercept details during permission checks
     };
 
@@ -64,6 +67,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const voiceRateSlider = document.getElementById('voice-rate');
     const pitchValLabel = document.getElementById('pitch-val');
     const rateValLabel = document.getElementById('rate-val');
+
+    // ElevenLabs elements
+    const elevenlabsApiKeyInput = document.getElementById('elevenlabs-api-key');
+    const auraVoiceIdInput = document.getElementById('aura-voice-id');
+    const ishqaVoiceIdInput = document.getElementById('ishqa-voice-id');
 
     // Permission Modal
     const permissionModal = document.getElementById('permission-modal');
@@ -429,8 +437,57 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clean query text: remove markdown characters
         const cleanText = text.replace(/[*#`_\-]/g, '').trim();
 
-        // Detect language based on mode. professional mode is mostly hindi/english mixed, 
-        // flirting mode is hinglish. Hindi ('hi') reads both Hindi & Hinglish incredibly naturally!
+        // 1. ELEVENLABS PREMIUM TTS FLOW (If API Key is provided)
+        if (appState.elevenLabsKey) {
+            const voiceId = appState.mode === 'ishqa' ? appState.ishqaVoiceId : appState.auraVoiceId;
+            const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`;
+
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'xi-api-key': appState.elevenLabsKey
+                },
+                body: JSON.stringify({
+                    text: cleanText,
+                    model_id: 'eleven_multilingual_v2',
+                    voice_settings: {
+                        stability: 0.45,
+                        similarity_boost: 0.8
+                    }
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("ElevenLabs API responded with an error");
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const audioUrl = URL.createObjectURL(blob);
+                audioPlayer = new Audio(audioUrl);
+                audioPlayer.onended = () => {
+                    changeState('idle');
+                };
+                audioPlayer.onerror = () => {
+                    speakGoogleTranslateTTSFallback(cleanText);
+                };
+                audioPlayer.play().catch(() => {
+                    speakGoogleTranslateTTSFallback(cleanText);
+                });
+            })
+            .catch(err => {
+                console.warn("ElevenLabs TTS failed, falling back to Google Translate: ", err);
+                speakGoogleTranslateTTSFallback(cleanText);
+            });
+        } else {
+            // 2. Default free path
+            speakGoogleTranslateTTSFallback(cleanText);
+        }
+    }
+
+    // Google Translate TTS Fallback
+    function speakGoogleTranslateTTSFallback(cleanText) {
         const lang = 'hi';
         const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
 
@@ -837,6 +894,11 @@ document.addEventListener('DOMContentLoaded', () => {
         voiceRateSlider.value = appState.voiceSettings.rate;
         rateValLabel.textContent = appState.voiceSettings.rate.toFixed(1);
         
+        // ElevenLabs fields load
+        elevenlabsApiKeyInput.value = appState.elevenLabsKey;
+        auraVoiceIdInput.value = appState.auraVoiceId;
+        ishqaVoiceIdInput.value = appState.ishqaVoiceId;
+        
         loadVoices(); // refresh list
         
         settingsModal.classList.remove('hidden');
@@ -868,12 +930,22 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.voiceSettings.pitch = parseFloat(voicePitchSlider.value);
         appState.voiceSettings.rate = parseFloat(voiceRateSlider.value);
 
+        // Save ElevenLabs state variables
+        appState.elevenLabsKey = elevenlabsApiKeyInput.value.trim();
+        appState.auraVoiceId = auraVoiceIdInput.value.trim() || 'EXAVITQu4vr4xnSDxMaL';
+        appState.ishqaVoiceId = ishqaVoiceIdInput.value.trim() || '21m00Tcm4TlvDq8ikWAM';
+
         // Store to localStorage
         localStorage.setItem('AURA_GEMINI_KEY', appState.geminiKey);
         localStorage.setItem('AURA_VOICE_URI', appState.voiceSettings.voiceURI);
         localStorage.setItem('AURA_RECOGNITION_LANG', appState.recognitionLang);
         localStorage.setItem('AURA_VOICE_PITCH', appState.voiceSettings.pitch.toString());
         localStorage.setItem('AURA_VOICE_RATE', appState.voiceSettings.rate.toString());
+
+        // Store ElevenLabs
+        localStorage.setItem('AURA_ELEVENLABS_KEY', appState.elevenLabsKey);
+        localStorage.setItem('AURA_VOICE_ID', appState.auraVoiceId);
+        localStorage.setItem('AURA_ISHQA_VOICE_ID', appState.ishqaVoiceId);
 
         // Apply updated language to recognition engine
         if (recognition) {
