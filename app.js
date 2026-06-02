@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let appState = {
         mode: 'aura', // 'aura' (Pro) or 'ishqa' (Flirty)
         status: 'idle', // 'idle', 'listening', 'thinking', 'speaking'
-        geminiKey: localStorage.getItem('AURA_GEMINI_KEY') || '',
+        geminiKey: localStorage.getItem('AURA_GEMINI_KEY') || 'AIzaSyAFIopWHMon0VbXkJxg86ux84ZtvvBl5-k',
         chatHistory: [],
         voiceSettings: {
             voiceURI: localStorage.getItem('AURA_VOICE_URI') || '',
