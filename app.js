@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
             rate: parseFloat(localStorage.getItem('AURA_VOICE_RATE')) || 1.0
         },
         recognitionLang: localStorage.getItem('AURA_RECOGNITION_LANG') || 'hi-IN',
-        elevenLabsKey: localStorage.getItem('AURA_ELEVENLABS_KEY') || '',
+        elevenLabsKey: localStorage.getItem('AURA_ELEVENLABS_KEY') || 'sk_91715c42ec1d8c3c5ccccdacc196c7aa73ddc3cfecb790e9',
         auraVoiceId: localStorage.getItem('AURA_VOICE_ID') || 'EXAVITQu4vr4xnSDxMaL', // Bella (pre-made)
         ishqaVoiceId: 'XcWoPxj7pwnIgM3dQnWv', // Fixed for ISHQA mode (Cannot be changed)
         pendingAction: null // Holds intercept details during permission checks
