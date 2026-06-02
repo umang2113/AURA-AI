@@ -174,6 +174,23 @@
                     </div>
                 </div>
 
+                <!-- Voice Cloning Section -->
+                <div class="form-group" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                    <label>Voice Cloning (Upload Audio Sample)</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                        <input type="text" id="cloned-voice-name" placeholder="Voice Name (e.g. My Voice)" style="flex-grow: 1;">
+                        <input type="file" id="voice-clone-file" accept="audio/*" style="display: none;">
+                        <button type="button" class="icon-btn" onclick="document.getElementById('voice-clone-file').click();" title="Choose Audio File" style="width: 38px; height: 38px; border-radius: 8px;">
+                            <i class="fa-solid fa-paperclip"></i>
+                        </button>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span id="clone-file-name" class="help-text" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">No file chosen</span>
+                        <button type="button" id="upload-clone-btn" class="primary-btn" style="padding: 6px 14px; font-size: 12px; height: auto;">Clone & Set (Aura)</button>
+                    </div>
+                    <span id="clone-status" class="help-text" style="color: var(--accent-color); margin-top: 4px; display: block;"></span>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group half-width">
                         <label for="voice-pitch">Pitch (Speed variation)</label>

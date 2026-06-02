@@ -72,6 +72,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const auraVoiceIdInput = document.getElementById('aura-voice-id');
     const ishqaVoiceIdInput = document.getElementById('ishqa-voice-id');
 
+    // Voice Cloning elements
+    const voiceCloneFileInput = document.getElementById('voice-clone-file');
+    const cloneFileNameSpan = document.getElementById('clone-file-name');
+    const clonedVoiceNameInput = document.getElementById('cloned-voice-name');
+    const uploadCloneBtn = document.getElementById('upload-clone-btn');
+    const cloneStatusSpan = document.getElementById('clone-status');
+
     // Permission Modal
     const permissionModal = document.getElementById('permission-modal');
     const permissionPromptText = document.getElementById('permission-prompt-text');
@@ -830,6 +837,103 @@ document.addEventListener('DOMContentLoaded', () => {
     permissionModal.addEventListener('click', (e) => {
         if (e.target === permissionModal) {
             denyPermissionBtn.click();
+        }
+    });
+
+    // --------------------------------------------------
+    // VOICE CLONING (ELEVENLABS API INTEGRATION)
+    // --------------------------------------------------
+    voiceCloneFileInput.addEventListener('change', () => {
+        const file = voiceCloneFileInput.files[0];
+        if (file) {
+            cloneFileNameSpan.textContent = file.name;
+        } else {
+            cloneFileNameSpan.textContent = "No file chosen";
+        }
+    });
+
+    uploadCloneBtn.addEventListener('click', async () => {
+        // Validate API Key
+        const apiKey = appState.elevenLabsKey || elevenlabsApiKeyInput.value.trim();
+        if (!apiKey) {
+            cloneStatusSpan.textContent = "Error: Please add your ElevenLabs API Key first!";
+            cloneStatusSpan.style.color = "#ef4444";
+            return;
+        }
+
+        // Validate File input
+        const file = voiceCloneFileInput.files[0];
+        if (!file) {
+            cloneStatusSpan.textContent = "Error: Please choose an audio file first!";
+            cloneStatusSpan.style.color = "#ef4444";
+            return;
+        }
+
+        // Validate Cloned Voice Name
+        let voiceName = clonedVoiceNameInput.value.trim();
+        if (!voiceName) {
+            voiceName = "Aura Cloned Voice";
+        }
+
+        // Display progress
+        cloneStatusSpan.textContent = "Uploading & cloning voice... Please wait.";
+        cloneStatusSpan.style.color = "var(--accent-color)";
+        uploadCloneBtn.disabled = true;
+
+        // Prepare FormData
+        const formData = new FormData();
+        formData.append('name', voiceName);
+        formData.append('description', 'Cloned via AURA Voice Assistant UI');
+        formData.append('files', file);
+
+        try {
+            const response = await fetch('https://api.elevenlabs.io/v1/voices/add', {
+                method: 'POST',
+                headers: {
+                    'xi-api-key': apiKey
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.detail?.message || "Failed to clone voice.");
+            }
+
+            const data = await response.json();
+            const newVoiceId = data.voice_id;
+
+            // Success! Save to App State
+            appState.auraVoiceId = newVoiceId;
+            localStorage.setItem('AURA_VOICE_ID', newVoiceId);
+            
+            // If they just entered API Key, save it too
+            if (elevenlabsApiKeyInput.value.trim()) {
+                appState.elevenLabsKey = elevenlabsApiKeyInput.value.trim();
+                localStorage.setItem('AURA_ELEVENLABS_KEY', appState.elevenLabsKey);
+            }
+
+            // Sync visual UI
+            auraVoiceIdInput.value = newVoiceId;
+
+            // Trigger success indicator
+            playSound(sfxSuccess);
+            cloneStatusSpan.textContent = `Success! Voice ID: ${newVoiceId}`;
+            cloneStatusSpan.style.color = "#10b981"; // Green color
+            
+            // Clean up inputs
+            clonedVoiceNameInput.value = '';
+            voiceCloneFileInput.value = '';
+            cloneFileNameSpan.textContent = "No file chosen";
+            
+            appendTranscript("System", `New voice cloned: "${voiceName}" (ID: ${newVoiceId}). Set as active Aura voice.`);
+            speakVoice("System voice cloned successfully. Hello from your new cloned voice!");
+        } catch (err) {
+            console.error("Cloning failed: ", err);
+            cloneStatusSpan.textContent = `Error: ${err.message}`;
+            cloneStatusSpan.style.color = "#ef4444";
+        } finally {
+            uploadCloneBtn.disabled = false;
         }
     });
 
