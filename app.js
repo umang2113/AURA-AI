@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize visualizer
     const visualizer = new AssistantVisualizer('visualizer-canvas', 'bg-canvas');
 
+    // Audio Player for Google Translate TTS
+    let audioPlayer = null;
+
     // --------------------------------------------------
     // DOM ELEMENTS
     // --------------------------------------------------
@@ -406,35 +409,76 @@ document.addEventListener('DOMContentLoaded', () => {
     // SPEECH SYNTHESIS ENGINE (TTS)
     // --------------------------------------------------
     function speakVoice(text) {
-        if (!synth) return;
+        if (!text || text.trim() === '') return;
+
+        // Cancel browser synthesis if active
+        if (synth) {
+            synth.cancel();
+        }
+
+        // Stop current audio player if active
+        if (audioPlayer) {
+            audioPlayer.pause();
+            audioPlayer = null;
+        }
+
+        changeState('speaking');
+
+        // Clean query text: remove markdown characters
+        const cleanText = text.replace(/[*#`_\-]/g, '').trim();
+
+        // Detect language based on mode. professional mode is mostly hindi/english mixed, 
+        // flirting mode is hinglish. Hindi ('hi') reads both Hindi & Hinglish incredibly naturally!
+        const lang = 'hi';
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+
+        audioPlayer = new Audio(url);
         
-        // Stop current speech before starting new
+        audioPlayer.onended = () => {
+            changeState('idle');
+        };
+
+        audioPlayer.onerror = (e) => {
+            console.warn("Google Translate TTS failed, falling back to Browser Synthesis: ", e);
+            speakBrowserTTSFallback(cleanText);
+        };
+
+        audioPlayer.play().catch(err => {
+            console.warn("Autoplay block or playback issue: ", err);
+            speakBrowserTTSFallback(cleanText);
+        });
+    }
+
+    // Native browser speech synthesis fallback (in case Google blocks or user is offline)
+    function speakBrowserTTSFallback(text) {
+        if (!synth) {
+            changeState('idle');
+            return;
+        }
+
         synth.cancel();
-        
+
         const utterance = new SpeechSynthesisUtterance(text);
-        
-        // Apply saved configuration voice
         const selectedVoice = availableVoices.find(v => v.voiceURI === appState.voiceSettings.voiceURI);
         if (selectedVoice) {
             utterance.voice = selectedVoice;
         }
-        
+
         utterance.pitch = appState.voiceSettings.pitch;
         utterance.rate = appState.voiceSettings.rate;
-        
+
         utterance.onstart = () => {
             changeState('speaking');
         };
-        
+
         utterance.onend = () => {
             changeState('idle');
         };
-        
-        utterance.onerror = (e) => {
-            console.error("Speech Synthesis Error: ", e);
+
+        utterance.onerror = () => {
             changeState('idle');
         };
-        
+
         synth.speak(utterance);
     }
 
@@ -738,8 +782,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Cancel voice if speaking
-        if (synth && synth.speaking) {
-            synth.cancel();
+        if ((synth && synth.speaking) || (audioPlayer && !audioPlayer.paused)) {
+            if (synth) synth.cancel();
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer = null;
+            }
             changeState('idle');
             return;
         }
