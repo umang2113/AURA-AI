@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pitch: parseFloat(localStorage.getItem('AURA_VOICE_PITCH')) || 1.0,
             rate: parseFloat(localStorage.getItem('AURA_VOICE_RATE')) || 1.0
         },
+        recognitionLang: localStorage.getItem('AURA_RECOGNITION_LANG') || 'hi-IN',
         pendingAction: null // Holds intercept details during permission checks
     };
 
@@ -58,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const geminiApiKeyInput = document.getElementById('gemini-api-key');
     const toggleKeyVisibility = document.getElementById('toggle-key-visibility');
     const voiceSelect = document.getElementById('voice-select');
+    const recognitionLangSelect = document.getElementById('recognition-lang');
     const voicePitchSlider = document.getElementById('voice-pitch');
     const voiceRateSlider = document.getElementById('voice-rate');
     const pitchValLabel = document.getElementById('pitch-val');
@@ -87,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = false;
-        recognition.lang = 'hi-IN'; // Default to Hindi, accepts Hinglish/English naturally
+        recognition.lang = appState.recognitionLang;
         isSpeechSupported = true;
     } else {
         console.warn("Web Speech Recognition API is not supported in this browser.");
@@ -797,7 +799,10 @@ document.addEventListener('DOMContentLoaded', () => {
             changeState('idle');
         } else {
             try {
-                recognition.start();
+                if (recognition) {
+                    recognition.lang = appState.recognitionLang;
+                    recognition.start();
+                }
             } catch (err) {
                 console.warn(err);
             }
@@ -825,6 +830,8 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsBtn.addEventListener('click', () => {
         // Load settings to modal DOM
         geminiApiKeyInput.value = appState.geminiKey;
+        voiceSelect.value = appState.voiceSettings.voiceURI;
+        recognitionLangSelect.value = appState.recognitionLang;
         voicePitchSlider.value = appState.voiceSettings.pitch;
         pitchValLabel.textContent = appState.voiceSettings.pitch.toFixed(1);
         voiceRateSlider.value = appState.voiceSettings.rate;
@@ -857,14 +864,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Save state variables
         appState.geminiKey = geminiApiKeyInput.value.trim();
         appState.voiceSettings.voiceURI = voiceSelect.value;
+        appState.recognitionLang = recognitionLangSelect.value;
         appState.voiceSettings.pitch = parseFloat(voicePitchSlider.value);
         appState.voiceSettings.rate = parseFloat(voiceRateSlider.value);
 
         // Store to localStorage
         localStorage.setItem('AURA_GEMINI_KEY', appState.geminiKey);
         localStorage.setItem('AURA_VOICE_URI', appState.voiceSettings.voiceURI);
+        localStorage.setItem('AURA_RECOGNITION_LANG', appState.recognitionLang);
         localStorage.setItem('AURA_VOICE_PITCH', appState.voiceSettings.pitch.toString());
         localStorage.setItem('AURA_VOICE_RATE', appState.voiceSettings.rate.toString());
+
+        // Apply updated language to recognition engine
+        if (recognition) {
+            recognition.lang = appState.recognitionLang;
+        }
 
         settingsModal.classList.add('hidden');
         playSound(sfxSuccess);
