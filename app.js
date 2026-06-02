@@ -343,44 +343,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. ELEVENLABS PREMIUM TTS FLOW (If API Key is provided)
         if (appState.elevenLabsKey) {
             const voiceId = appState.mode === 'ishqa' ? appState.ishqaVoiceId : appState.auraVoiceId;
-            const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`;
+            // Use GET stream endpoint directly inside Audio object to completely bypass CORS block!
+            const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?text=${encodeURIComponent(cleanText)}&xi-api-key=${appState.elevenLabsKey}&model_id=eleven_multilingual_v2`;
 
-            fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'xi-api-key': appState.elevenLabsKey
-                },
-                body: JSON.stringify({
-                    text: cleanText,
-                    model_id: 'eleven_multilingual_v2',
-                    voice_settings: {
-                        stability: 0.45,
-                        similarity_boost: 0.8
-                    }
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("ElevenLabs API responded with an error");
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                const audioUrl = URL.createObjectURL(blob);
-                audioPlayer = new Audio(audioUrl);
-                audioPlayer.onended = () => {
-                    changeState('idle');
-                };
-                audioPlayer.onerror = () => {
-                    speakGoogleTranslateTTSFallback(cleanText);
-                };
-                audioPlayer.play().catch(() => {
-                    speakGoogleTranslateTTSFallback(cleanText);
-                });
-            })
-            .catch(err => {
-                console.warn("ElevenLabs TTS failed, falling back to Google Translate: ", err);
+            audioPlayer = new Audio(url);
+            
+            audioPlayer.onended = () => {
+                changeState('idle');
+            };
+            
+            audioPlayer.onerror = (e) => {
+                console.warn("ElevenLabs GET TTS failed, falling back to Google Translate: ", e);
+                speakGoogleTranslateTTSFallback(cleanText);
+            };
+            
+            audioPlayer.play().catch(err => {
+                console.warn("ElevenLabs autoplay blocked or key limit hit: ", err);
                 speakGoogleTranslateTTSFallback(cleanText);
             });
         } else {
